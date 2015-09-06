@@ -60,6 +60,8 @@ struct pc_node {
     uint64_t  sym;      // symbol
     uint64_t  parent;   // pointer to the parent
     uint64_t  child[2]; // pointer to the children
+    uint64_t  minimal_depth;
+    uint64_t  maximal_depth;
 
     enum :uint64_t {undef = 0xFFFFFFFFFFFFFFFFULL}; // max uint64_t value
 
@@ -319,10 +321,21 @@ struct _byte_tree {
         return m_path[c];
     }
 
+    //! Return the path as left/right bit sequence in a uint64_t
+	inline void set_bit_path(value_type c, uint64_t path, uint64_t len ) {
+		m_path[c] = path | (len << 56);
+	}
+
+
     //! Return the start of the node in the WT's bit vector
     inline uint64_t bv_pos(node_type v)const {
         return m_nodes[v].bv_pos;
     }
+
+    //! Return the start of the node in the WT's bit vector
+	inline void set_bv_pos(node_type v, uint64_t pos) {
+		m_nodes[v].bv_pos = pos;
+	}
 
     //! Returns for node v the rank of 1's up to bv_pos(v)
     inline uint64_t bv_pos_rank(node_type v)const {
@@ -541,6 +554,7 @@ struct _int_tree {
         else
             return m_c_to_leaf[c];
     }
+
     //! Return the root node of the tree.
     inline static node_type root() {
         return 0;
@@ -573,10 +587,24 @@ struct _int_tree {
         return m_path[c];
     }
 
+    //! Return the path as left/right bit sequence in a uint64_t
+	inline void set_bit_path(value_type c, uint64_t path, uint64_t len ) {
+if(c >= m_path.size() )
+		{
+			m_path.resize(c + 1);
+		}
+		m_path[c] = path | (len << 56);
+	}
+
     //! Return the start of the node in the WT's bit vector
     inline uint64_t bv_pos(node_type v)const {
         return m_nodes[v].bv_pos;
     }
+
+    //! Return the start of the node in the WT's bit vector
+	inline void set_bv_pos(node_type v, uint64_t pos) {
+		m_nodes[v].bv_pos = pos;
+	}
 
     //! Returns for node v the rank of 1's up to bv_pos(v)
     inline uint64_t bv_pos_rank(node_type v)const {
@@ -630,3 +658,4 @@ struct int_tree {
 
 } // end namespace sdsl
 #endif
+

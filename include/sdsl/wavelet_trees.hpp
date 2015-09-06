@@ -38,6 +38,8 @@
 #include "wm_int.hpp"
 #include "wt_rlmn.hpp"
 #include "wt_ap.hpp"
+#include "wt_cann.hpp"
+#include "wt_new_sk.hpp"
 #include "construct.hpp"
 #include "wt_algorithm.hpp"
 

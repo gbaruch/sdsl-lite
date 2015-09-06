@@ -76,7 +76,7 @@ class wt_pc
         enum { lex_ordered=shape_type::lex_ordered };
         using node_type = typename tree_strat_type::node_type;
 
-    private:
+    public:
 
 #ifdef WT_PC_CACHE
         mutable value_type m_last_access_answer;
