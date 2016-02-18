@@ -524,8 +524,8 @@ class wm_int
             written_bytes += write_member(m_sigma, out, child, "sigma");
             written_bytes += m_tree.serialize(out, child, "tree");
             written_bytes += m_tree_rank.serialize(out, child, "tree_rank");
-            written_bytes += m_tree_select1.serialize(out, child, "tree_select_1");
-            written_bytes += m_tree_select0.serialize(out, child, "tree_select_0");
+//            written_bytes += m_tree_select1.serialize(out, child, "tree_select_1");
+//            written_bytes += m_tree_select0.serialize(out, child, "tree_select_0");
             written_bytes += write_member(m_max_level, out, child, "max_level");
             written_bytes += m_zero_cnt.serialize(out, child, "zero_cnt");
             written_bytes += m_rank_level.serialize(out, child, "rank_level");
@@ -539,8 +539,8 @@ class wm_int
             read_member(m_sigma, in);
             m_tree.load(in);
             m_tree_rank.load(in, &m_tree);
-            m_tree_select1.load(in, &m_tree);
-            m_tree_select0.load(in, &m_tree);
+            //m_tree_select1.load(in, &m_tree);
+            //m_tree_select0.load(in, &m_tree);
             read_member(m_max_level, in);
             m_zero_cnt.load(in);
             m_rank_level.load(in);

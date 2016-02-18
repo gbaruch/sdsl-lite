@@ -18,7 +18,7 @@ y_for_bar<-function(offset){
 }
 
 #Method which plots the size figure
-plot_size_figure <-function(data,heading,ylab=F){
+plot_size_figure <-function(data,heading,ylab=F,xlab=T){
 
 	#set margin
 	par(mar=c(3,2,3,0))
@@ -34,7 +34,12 @@ plot_size_figure <-function(data,heading,ylab=F){
 	}
 	#label x-axis
 	axis(1)
+	if(xlab){
 	mtext("Size relative to original file size", side=1, line=2)
+}
+else
+{	mtext("Overhead size relative to compressed file size", side=1, line=2)
+}
 
 	#draw bars
 	offset=0.1
@@ -129,15 +134,21 @@ for(tc in unique(maindata$TC_ID)){
 	rownames(is)<-id
 	plot_time_figure(t(is),"\\tt{inverse\\_select}",xlab=F,ylab=F,xmax=xmax)
 
+	#constructor-plot
+	con <-data['constructs_time']
+	rownames(con)<-id
+	plot_time_figure(t(con),"\\tt{construct}",ylab=T,xlab=F,constructor=T)
+
+
 	#lex-count-plot
-	lc <-data['lex_count_time']
-	rownames(lc)<-id
-	plot_time_figure(t(lc),"\\tt{lex\\_count}",xmax=xmax)
+	#lc <-data['lex_count_time']
+	#rownames(lc)<-id
+	#plot_time_figure(t(lc),"\\tt{lex\\_count}",xmax=xmax)
 
 	#lex-smaller-count-plot
-	lsc <-data['lex_smaller_count_time']
-	rownames(lsc)<-id
-	plot_time_figure(t(lsc),"\\tt{lex\\_smaller\\_count}",ylab=F,xmax=xmax)
+	#lsc <-data['lex_smaller_count_time']
+	#rownames(lsc)<-id
+	#plot_time_figure(t(lsc),"\\tt{lex\\_smaller\\_count}",ylab=F,xmax=xmax)
 	
 	old<-par()
 	dev.off()
@@ -154,14 +165,25 @@ for(tc in unique(maindata$TC_ID)){
 	   widths=c(1.35,1), heights=c(1,1,1))
 
 	#interval-symbols-plot
-	ivs <-data['interval_symbols_time']
-	rownames(ivs)<-id
-	plot_time_figure(t(ivs),"\\tt{interval\\_symbols}",xmax=max(xmax,max(ivs)))
+	#ivs <-data['interval_symbols_time']
+	#rownames(ivs)<-id
+	#plot_time_figure(t(ivs),"\\tt{interval\\_symbols}",xmax=max(xmax,max(ivs)))
 
-	#constructor-plot
-	con <-data['constructs_time']
-	rownames(con)<-id
-	plot_time_figure(t(con),"\\tt{construct}",ylab=F,xlab=F,constructor=T)
+#size-relative-to-overhead
+compressed_size<-data[[1,'compressed_size']]
+relsize <-((data['wt_size']-compressed_size)/compressed_size)*100
+rownames(relsize)<-id
+
+	plot_size_figure(t(relsize),"\\tt{relative space}",ylab=T, xlab=F)
+
+	#size-plot
+	tsize<-data[[1,'TC_SIZE']]
+	size <-(data['wt_size']/tsize)*100
+	rownames(size)<-id
+
+	plot_size_figure(t(size),"\\tt{space}")
+
+
 
 	#construction-size-plot
 	tsize<-data[[1,'TC_SIZE']]
@@ -170,12 +192,6 @@ for(tc in unique(maindata$TC_ID)){
 
 	plot_size_figure(t(consize),"\\tt{construction space}",ylab=T)
 
-	#size-plot
-	tsize<-data[[1,'TC_SIZE']]
-	size <-(data['wt_size']/tsize)*100
-	rownames(size)<-id
-
-	plot_size_figure(t(size),"\\tt{space}")
 
 	dev.off()
 	tex_doc <- paste(tex_doc,"\\begin{figure}[H]	

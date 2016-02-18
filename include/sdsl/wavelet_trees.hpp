@@ -40,8 +40,14 @@
 #include "wt_ap.hpp"
 #include "wt_cann.hpp"
 #include "wt_new_sk.hpp"
+#include "FixedLength.hpp"
+#include "wt_reduced_sk.hpp"
 #include "construct.hpp"
 #include "wt_algorithm.hpp"
+#include "KulekciRiceH.hpp"
+#include "KulekciRiceW.hpp"
+#include "KulekciEliasH.hpp"
+#include "KulekciEliasW.hpp"
 
 namespace sdsl
 {

@@ -1,5 +1,5 @@
 include ../../Make.helper
-CFLAGS = $(MY_CXX_FLAGS) 
+CFLAGS = -std=c++11 $(MY_CXX_FLAGS) 
 SRC_DIR = src
 BIN_DIR = bin
 LIBS = -lsdsl 

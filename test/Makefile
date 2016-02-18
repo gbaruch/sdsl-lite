@@ -1,5 +1,5 @@
 include ../Make.helper
-CXX_FLAGS=$(MY_CXX_FLAGS) -Wall -Werror -Wunused-parameter -g -O3 \
+CXX_FLAGS=$(MY_CXX_FLAGS) -Wall -Wunused-parameter -g -O3 \
 		  -I$(INC_DIR) \
 		  -I../external/googletest/include \
 		  -L$(LIB_DIR) \
@@ -63,27 +63,27 @@ TC_PATHS:= $(WT_BYTE_TC_PATHS) $(WT_INT_TC_PATHS) \
 # do not delete the generated/downloaded test_cases
 .SECONDARY: $(TC_PATHS)
 
-test:	bits-test \
-	coder-test \
-	int-vector-test \
-	inv-perm-support-test \
-	int-vector-mapper-test \
-	int-vector-buffer-test \
-	bit-vector-test \
-	rank-support-test\
-	select-support-test\
-	wt-byte-test \
-	wt-int-test \
-	csa-byte-test \
-	csa-int-test \
-	cst-byte-test \
-	cst-int-test \
-	rmq-test \
-	sa-construct-test \
-	search-bidirectional-test \
-	sorted-int-stack-test \
-	nn-dict-dynamic-test \
-	k2treap-test
+test: wt-byte-test 
+#wt-int-test
+	#bits-test \
+	#coder-test \
+	#int-vector-test \
+	#inv-perm-support-test \
+	#int-vector-mapper-test \
+	#int-vector-buffer-test \
+	#bit-vector-test \
+	#rank-support-test\
+	#select-support-test\
+	#csa-byte-test \
+	#csa-int-test \
+	#cst-byte-test \
+	#cst-int-test \
+	#rmq-test \
+	#sa-construct-test \
+	#search-bidirectional-test \
+	#sorted-int-stack-test \
+	#nn-dict-dynamic-test \
+	#k2treap-test
 
 ../build/googletest/libgtest.a : ../external/googletest/CMakeLists.txt
 	mkdir -p ../build/googletest/

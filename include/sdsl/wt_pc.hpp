@@ -643,9 +643,9 @@ class wt_pc
             written_bytes += write_member(m_sigma,out,child, "sigma");
             written_bytes += m_bv.serialize(out,child,"bv");
             written_bytes += m_bv_rank.serialize(out,child,"bv_rank");
-            written_bytes += m_bv_select1.serialize(out,child,"bv_select_1");
-            written_bytes += m_bv_select0.serialize(out,child,"bv_select_0");
-            written_bytes += m_tree.serialize(out,child,"tree");
+            //written_bytes += m_bv_select1.serialize(out,child,"bv_select_1");
+            //written_bytes += m_bv_select0.serialize(out,child,"bv_select_0");
+            written_bytes += m_tree.serialize(out,child,"tree", false);
             structure_tree::add_size(child, written_bytes);
             return written_bytes;
         }
@@ -656,9 +656,9 @@ class wt_pc
             read_member(m_sigma, in);
             m_bv.load(in);
             m_bv_rank.load(in, &m_bv);
-            m_bv_select1.load(in, &m_bv);
-            m_bv_select0.load(in, &m_bv);
-            m_tree.load(in);
+//            m_bv_select1.load(in, &m_bv);
+//            m_bv_select0.load(in, &m_bv);
+            m_tree.load(in, false);
         }
 
         //! Checks if the node is a leaf node

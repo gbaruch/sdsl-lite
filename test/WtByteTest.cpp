@@ -23,8 +23,9 @@ class WtByteTest : public ::testing::Test { };
 using testing::Types;
 
 typedef Types<
-wt_pc<balanced_shape>
-,wt_blcd<rrr_vector<63>>
+//wt_pc<balanced_shape>
+wt_fixedLength
+,/*wt_blcd<rrr_vector<63>>
                       ,wt_blcd<bit_vector_il<>>
                       ,wt_blcd<bit_vector>
                       ,wt_huff<bit_vector_il<>>
@@ -37,7 +38,8 @@ wt_pc<balanced_shape>
                       ,wt_hutu<bit_vector_il<>>
                       ,wt_hutu<bit_vector, rank_support_v<>>
                       ,wt_hutu<bit_vector, rank_support_v5<>>
-                      ,wt_hutu<rrr_vector<63>>
+                      ,wt_hutu<rrr_vector<63>>*/
+wt_new_sk<cann_shape>
                       > Implementations;
 
 TYPED_TEST_CASE(WtByteTest, Implementations);
@@ -112,7 +114,7 @@ TYPED_TEST(WtByteTest, AccessCopyMoveAndSwap)
 }
 
 //! Test rank methods
-TYPED_TEST(WtByteTest, Rank)
+/*TYPED_TEST(WtByteTest, Rank)
 {
     TypeParam wt;
     ASSERT_TRUE(load_from_file(wt, temp_file));
@@ -141,10 +143,10 @@ TYPED_TEST(WtByteTest, Rank)
     for (size_type c=0; c < 256; ++c) {
         ASSERT_EQ(cnt[c], wt.rank(wt.size(), (unsigned char)c))<<" c="<<c;
     }
-}
+}*/
 
 //! Test select methods
-TYPED_TEST(WtByteTest, Select)
+/*TYPED_TEST(WtByteTest, Select)
 {
     TypeParam wt;
     ASSERT_TRUE(load_from_file(wt, temp_file));
@@ -156,10 +158,10 @@ TYPED_TEST(WtByteTest, Select)
         cnt[text[j]]++;
         ASSERT_EQ(j, wt.select(cnt[text[j]], text[j]))<< " j = "<<j<<" text[j] = "<<text[j];
     }
-}
+}*/
 
 //! Test inverse select method
-TYPED_TEST(WtByteTest, InverseSelect)
+/*TYPED_TEST(WtByteTest, InverseSelect)
 {
     TypeParam wt;
     ASSERT_TRUE(load_from_file(wt, temp_file));
@@ -173,7 +175,7 @@ TYPED_TEST(WtByteTest, InverseSelect)
         ASSERT_EQ(text[j], rc.second);
         cnt[text[j]]++;
     }
-}
+}*/
 
 template<class t_wt>
 void
@@ -229,11 +231,11 @@ test_interval_symbols(typename std::enable_if<has_node_type<t_wt>::value,
 }
 
 //! Test interval symbols method
-TYPED_TEST(WtByteTest, IntervalSymbols)
+/*TYPED_TEST(WtByteTest, IntervalSymbols)
 {
     TypeParam wt;
     test_interval_symbols<TypeParam>(wt);
-}
+}*/
 
 
 template<class t_wt>

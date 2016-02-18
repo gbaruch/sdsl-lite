@@ -5,12 +5,13 @@
  *      Author: gilad
  */
 
-#ifndef NEW_SKELETONWAVELETTREE_H_
-#define NEW_SKELETONWAVELETTREE_H_
+#ifndef NEW_REDUCED_SKELETON_H_
+#define NEW_REDUCED_SKELETON_H_
 
 #include <iostream>
 #include <sdsl/wt_helper.hpp>
 #include <sdsl/wt_pc.hpp>
+//#include <sdsl/wt_new_sk.hpp>
 //#include <sdsl/wt_cann.hpp>
 #include <cmath>
 
@@ -18,7 +19,7 @@ namespace sdsl
 {
 using namespace std::chrono;
 using timer = std::chrono::high_resolution_clock;
-struct pc_node_ex {
+struct sk_node {
     uint64_t  freq;     // frequency of symbol sym
     uint64_t  sym;      // symbol
     uint64_t  parent;   // pointer to the parent
@@ -28,7 +29,7 @@ struct pc_node_ex {
 
     enum :uint64_t {undef = 0xFFFFFFFFFFFFFFFFULL}; // max uint64_t value
 
-    pc_node_ex(uint64_t freq_=0, uint64_t sym_=0, uint64_t parent_=undef,
+    sk_node(uint64_t freq_=0, uint64_t sym_=0, uint64_t parent_=undef,
             uint64_t child_left=undef, uint64_t child_right=undef)
     {
     	freq = freq_;
@@ -40,7 +41,7 @@ struct pc_node_ex {
 		maximal_depth = undef;
     }
 
-    pc_node_ex& operator=(const pc_node_ex& v)
+    sk_node& operator=(const sk_node& v)
     {
     	if (this != &v) {
     	freq = v.freq;
@@ -74,15 +75,18 @@ template<class t_shape,
          class t_select_zero = typename t_bitvector::select_0_type,
          class t_tree_strat  = byte_tree<>
          >
-	class wt_new_sk: public sdsl::wt_pc<t_shape, t_bitvector, t_rank, t_select, t_select_zero, t_tree_strat>
+	class wt_red_sk: public sdsl::wt_pc<t_shape, t_bitvector, t_rank, t_select, t_select_zero, t_tree_strat>
 	{
 	public:
-        typedef typename
-        t_tree_strat::template type<wt_pc<t_shape, t_bitvector, t_rank, t_select, t_select_zero, t_tree_strat>>            tree_strat_type_pc;
+		typedef typename
+		t_tree_strat::template type<wt_pc<t_shape, t_bitvector, t_rank, t_select, t_select_zero, t_tree_strat>>            tree_strat_type_red;
+
 		typedef int_vector<>::size_type               size_type;
 		/*typedef typename
-				t_tree_strat::template type<wt_pc<t_shape, t_bitvector, t_rank, t_select, t_select_zero, t_tree_strat>>::value_type                   value_type;*/
-		using value_type = typename tree_strat_type_pc::value_type;
+				tree_strat_type_red::value_type                   value_type;*/
+		/*typedef typename
+				tree_strat_type_red::template type<wt_pc<t_shape, t_bitvector, t_rank, t_select, t_select_zero, t_tree_strat>>::value_type                 value_type;*/
+		using value_type = typename tree_strat_type_red::value_type;
 		typedef typename t_bitvector::difference_type difference_type;
 		typedef random_access_const_iterator<wt_pc<t_shape, t_bitvector, t_rank, t_select, t_select_zero, t_tree_strat>>   const_iterator;
 		typedef const_iterator                        iterator;
@@ -92,19 +96,20 @@ template<class t_shape,
 		typedef t_select_zero                         select_0_type;
 		typedef wt_tag                                index_category;
 		typedef typename
-				tree_strat_type_pc::alphabet_category            alphabet_category;
+				tree_strat_type_red::alphabet_category            alphabet_category;
 		typedef typename
 		t_shape::template type<wt_pc<t_shape, t_bitvector, t_rank, t_select, t_select_zero, t_tree_strat>>                 shape_type;
 		enum { lex_ordered=shape_type::lex_ordered };
-		using node_type = typename tree_strat_type_pc::node_type;
+		using node_type = typename tree_strat_type_red::node_type;
 
+		static const bool _shouldShiftPrunedLeftOnReduced = true;
 		std::vector<value_type>					m_pruned_chars;
 		bit_vector		 						m_leaves_bv;
 
-		virtual ~wt_new_sk(){}
+		virtual ~wt_red_sk(){}
 
 		//creates a canonical huffman tree, represented in temp_nodes in DFS order
-		void construct_cann_tree(const std::vector<size_type>& C, std::vector<pc_node_ex>& temp_nodes, std::map<uint64_t ,sdsl::bit_vector>& chars_coding,
+		void construct_cann_tree(const std::vector<size_type>& C, std::vector<sk_node>& temp_nodes, std::map<uint64_t ,sdsl::bit_vector>& chars_coding,
 				std::vector<uint64_t>& chars_pruned_length) {
 			tMPQPII pq;
 			size_type i = 0;
@@ -115,7 +120,7 @@ template<class t_shape,
 							// initial bv_pos with number of occurrences and bv_pos_rank
 							// value with the code of the corresponding char, parent,
 							// child[0], and child[1] are set to undef
-							temp_nodes.emplace_back( pc_node_ex(freq, i));
+							temp_nodes.emplace_back( sk_node(freq, i));
 				}
 				++i;
 			});
@@ -127,7 +132,7 @@ template<class t_shape,
 				temp_nodes[std::get<2>(v2)].parent = temp_nodes.size(); // parent is new node
 				size_type frq_sum = std::get<0>(v1) + std::get<0>(v2);
 				pq.push(tPII(frq_sum, -1, temp_nodes.size()));
-				temp_nodes.emplace_back(pc_node_ex(frq_sum, 0, pc_node::undef,
+				temp_nodes.emplace_back(sk_node(frq_sum, 0, pc_node::undef,
 						std::get<2>(v1), std::get<2>(v2)));
 			}
 
@@ -156,7 +161,7 @@ template<class t_shape,
 						{
 				std::cout << "depth " << std::get<0>(*it) << " freq is " << ((uint64_t)-1) - std::get<1>(*it) << " sym is " <<(char)std::get<2>(*it) <<std::endl;
 						}*/
-			temp_nodes.emplace_back(pc_node_ex(0, 0));
+			temp_nodes.emplace_back(sk_node(0, 0));
 			size_type nodesToGoDown = 0;
 			for(std::vector<std::tuple<uint64_t, uint64_t, uint64_t>>::iterator it = depthFrequencyAndSymbol.begin(); it != depthFrequencyAndSymbol.end(); it++)
 			{
@@ -175,7 +180,7 @@ template<class t_shape,
 					{
 						temp_nodes[currentNode].minimal_depth = nodesToGoDown;
 						temp_nodes[currentNode].child[0] = currentNode + 1;
-						temp_nodes.emplace_back(pc_node_ex(0, 0, currentNode));
+						temp_nodes.emplace_back(sk_node(0, 0, currentNode));
 						currentNode++;
 
 					}
@@ -220,7 +225,7 @@ if(bv.size() > 0)
 				{
 					currentNode = temp_nodes[currentNode].parent;
 					temp_nodes[currentNode].child[1] = temp_nodes.size();
-					temp_nodes.emplace_back(pc_node_ex(0, 0, currentNode));
+					temp_nodes.emplace_back(sk_node(0, 0, currentNode));
 					currentNode = temp_nodes.size() - 1;
 					bv[temp] = 1;
 				}
@@ -228,7 +233,7 @@ if(bv.size() > 0)
 			}
 
 
-			pc_node_ex root = temp_nodes[0];
+			sk_node root = temp_nodes[0];
 			root.minimal_depth = temp_nodes[0].minimal_depth;
 			root.maximal_depth = temp_nodes[0].maximal_depth;
 			for (size_type i = 1; i < temp_nodes.size(); ++i) {
@@ -262,15 +267,18 @@ if(bv.size() > 0)
 		}
 
 		//prunes full sub trees f the canonical tree
-		void prune(std::vector<pc_node_ex>& temp_nodes, std::vector<uint64_t>& chars_pruned_length)
+		void prune(std::vector<sk_node>& temp_nodes, std::vector<uint64_t>& chars_pruned_length, std::map<uint64_t ,sdsl::bit_vector>& chars_coding,
+				std::map<uint64_t, uint64_t>& leaves_to_size_of_subtree)
 		{
+			int differnceForPruning = 1;
+
 			//m_h.resize(temp_nodes.size(), 0);
-			std::vector<pc_node_ex> pruned_nodes(temp_nodes.begin(), temp_nodes.end());
+			std::vector<sk_node> pruned_nodes(temp_nodes.begin(), temp_nodes.end());
 			size_type delta = 0;
 			//std::cout << temp_nodes.size() << " temp nodes size" <<std::endl;
 			//std::cout.flush();
 
-			pc_node_ex root = temp_nodes[temp_nodes.size() - 1] ;
+			sk_node root = temp_nodes[temp_nodes.size() - 1] ;
 
 			//checking if is a full tree
 			if(root.minimal_depth == root.maximal_depth && root.minimal_depth > 0)
@@ -298,34 +306,88 @@ if(bv.size() > 0)
 			{
 				for(size_type currentNode = 0; currentNode < temp_nodes.size() - 1; currentNode++)
 				{
-					if(temp_nodes[currentNode].minimal_depth == temp_nodes[currentNode].maximal_depth && temp_nodes[currentNode].minimal_depth > 0)
+					if((temp_nodes[currentNode].maximal_depth - temp_nodes[currentNode].minimal_depth)<= differnceForPruning
+							&& temp_nodes[currentNode].maximal_depth > 0)
 					{
 
 					  /*	std::cout << "Node " << currentNode << " is a root of a full subtree of depth " <<
 								temp_nodes[currentNode].minimal_depth;
 						std::cout << std::endl;
 					  */
-						//pruning the siblings of current node
-						size_type current_delta = pow(2., (double)temp_nodes[currentNode].minimal_depth + 1) - 2;
-						//std::cout << "current delta " <<current_delta <<std::endl;
+						int minimalLength = 100000;
+						size_type current_delta = pow(2., (double)temp_nodes[currentNode].maximal_depth + 1) - 2;
+						leaves_to_size_of_subtree[currentNode - delta] = pow(2., temp_nodes[currentNode].maximal_depth);
+						if(temp_nodes[currentNode].maximal_depth != temp_nodes[currentNode].minimal_depth)
+						{
+							//current_delta is too big in such case because of the minimal_depth.
 
-						pruned_nodes[currentNode - delta].child[1] = temp_nodes[currentNode].minimal_depth;
+							for(size_type i = currentNode + 1; i < currentNode + current_delta + 1; i++)
+							{
+								if(temp_nodes[i].child[0] == pc_node::undef)
+								{
+									int currentLength = chars_coding[temp_nodes[i].sym].size();
+									if(currentLength < minimalLength)
+									{
+										minimalLength = currentLength;
+									}
+									if(currentLength == minimalLength)
+									{
+										current_delta -= 2;
+										if(_shouldShiftPrunedLeftOnReduced)
+										{
+											leaves_to_size_of_subtree[currentNode - delta]--;
+										}
+									}
+								}
+							}
+						}
+
+
+						pruned_nodes[currentNode - delta].child[1] = temp_nodes[currentNode].maximal_depth;
 
 						//std::cout << "pruning from " << currentNode + 1 - delta << " to "<<currentNode + 1 + current_delta - delta <<std::endl;
 						pruned_nodes.erase(pruned_nodes.begin() + currentNode + 1 - delta,  pruned_nodes.begin() + currentNode + 1 + current_delta - delta);
 
+						uint64_t children_counter = 0;
+						uint64_t unpruned_length = minimalLength - temp_nodes[currentNode].minimal_depth;
 						//update pruned length of leaves under current node
 						for(size_type i = currentNode + 1; i < currentNode + 1 + current_delta; i++)
 						{
 							if(temp_nodes[i].child[0] == pc_node::undef)
 							{
+								if(chars_coding[temp_nodes[i].sym].size() < minimalLength)
+								{
+									minimalLength = chars_coding[temp_nodes[i].sym].size();
+									unpruned_length = minimalLength - temp_nodes[currentNode].minimal_depth;
+								}
+
+								int currentLength = chars_coding[temp_nodes[i].sym].size();
+
 								if(chars_pruned_length.size() < temp_nodes[i].sym + 1)
 								{
 									chars_pruned_length.resize(temp_nodes[i].sym + 1);
 								}
 								//chars_pruned_length.insert(std::pair<uint64_t, uint64_t>(temp_nodes[i].sym, temp_nodes[currentNode].minimal_depth));
-								chars_pruned_length[temp_nodes[i].sym] = temp_nodes[currentNode].minimal_depth;
+								chars_pruned_length[temp_nodes[i].sym] = temp_nodes[currentNode].maximal_depth;
+
+								if(temp_nodes[currentNode].maximal_depth != temp_nodes[currentNode].minimal_depth)
+								{
+									if(_shouldShiftPrunedLeftOnReduced)
+									{
+										uint64_t rev = bits::rev(children_counter);
+										rev >>= (64 - temp_nodes[currentNode].maximal_depth);
+										chars_coding[temp_nodes[i].sym].bit_resize(unpruned_length + temp_nodes[currentNode].maximal_depth);
+										chars_coding[temp_nodes[i].sym].set_int(unpruned_length, rev, temp_nodes[currentNode].maximal_depth);
+
+									}
+									else if(currentLength == minimalLength )
+									{
+										m_pruned_chars.push_back(temp_nodes[i].sym);
+										chars_coding[temp_nodes[i].sym].bit_resize(currentLength + 1);
+									}
+								}
 								m_pruned_chars.push_back(temp_nodes[i].sym);
+								children_counter++;
 							}
 						}
 
@@ -358,39 +420,10 @@ if(bv.size() > 0)
 				}
 			}
 			std::swap(pruned_nodes, temp_nodes);
-			/*//printing the tree
-			std::cout<< "full" <<std::endl;
-			for(int i = 0; i < pruned_nodes.size(); i++)
-			{
-				char symbol;
-				if(pruned_nodes[i].sym)
-					symbol = (char)pruned_nodes[i].sym;
-				else
-					symbol = '*';
-				std::cout << i << ": symbol: " << symbol << ", parent is " << pruned_nodes[i].parent
-						<< ", left child is " << pruned_nodes[i].child[0]  << ", right child is " << pruned_nodes[i].child[1]
-						<< ", freq is " << pruned_nodes[i].freq
-						<< ", minimal depth is " << pruned_nodes[i].minimal_depth
-						<< ", maximal depth is " << pruned_nodes[i].maximal_depth<< std::endl;
-			}
-			std::cout<< "pruned" <<std::endl;
-			for(int i = 0; i < temp_nodes.size(); i++)
-			{
-				char symbol;
-				if(temp_nodes[i].sym)
-					symbol = (char)temp_nodes[i].sym;
-				else
-					symbol = '*';
-				std::cout << i << ": symbol: " << symbol << ", parent is " << temp_nodes[i].parent
-						<< ", left child is " << temp_nodes[i].child[0]  << ", right child is " << temp_nodes[i].child[1]
-						<< ", freq is " << temp_nodes[i].freq
-						<< ", minimal depth is " << temp_nodes[i].minimal_depth
-						<< ", maximal depth is " << temp_nodes[i].maximal_depth<< std::endl;
-			}*/
 		}
 
 		//! Swap operator
-		void swap(wt_new_sk& wt) {
+		void swap(wt_red_sk& wt) {
 			if (this != &wt) {
 				std::swap(this->m_size, wt.m_size);
 				std::swap(this->m_sigma,  wt.m_sigma);
@@ -404,7 +437,6 @@ if(bv.size() > 0)
 								   &this->m_bv, &(wt.m_bv));
 				this->m_tree.swap(wt.m_tree);
 
-				//std::swap(m_chars_coding, wt.m_chars_coding);
 				std::swap(m_pruned_chars, wt.m_pruned_chars);
 				std::swap(m_leaves_bv, wt.m_leaves_bv);
 			}
@@ -412,22 +444,22 @@ if(bv.size() > 0)
 
 		// calculates the tree shape returns the size of the WT bit vector
 		virtual size_type construct_tree_shape(const std::vector<size_type>& C, std::map<uint64_t ,sdsl::bit_vector>& chars_coding, std::vector<uint64_t>& chars_pruned_length,
-				std::vector<pc_node_ex>& temp_nodes) {
+				std::vector<sk_node>& temp_nodes, std::map<uint64_t, uint64_t>& leaves_to_size_of_subtree) {
 			// vector  for node of the tree
 			construct_cann_tree(C, temp_nodes, chars_coding, chars_pruned_length);
-			prune(temp_nodes, chars_pruned_length);
+			prune(temp_nodes, chars_pruned_length, chars_coding,  leaves_to_size_of_subtree);
 			// Convert code tree into BFS order in memory and
 			// calculate bv_pos values
 			size_type bv_size = 0;
 			std::vector<pc_node> temp(temp_nodes.begin(), temp_nodes.end());
-			tree_strat_type_pc temp_tree(temp, bv_size, this);
+			tree_strat_type_red temp_tree(temp, bv_size, this);
 			this->m_tree.swap(temp_tree);
 
 			return bv_size;
 		}
 
 		//creates the tree and the bit_vector, and initializing rand & select
-		wt_new_sk(int_vector_buffer<tree_strat_type_pc::int_width>& input_buf,
+		wt_red_sk(int_vector_buffer<tree_strat_type_red::int_width>& input_buf,
 				size_type size) {
 			this->m_size = size;
 		    if (0 == this->m_size)
@@ -445,8 +477,9 @@ if(bv.size() > 0)
 		    // 3. Generate tree shape
 		    std::map<uint64_t ,bit_vector> chars_coding;
 		    std::vector<uint64_t> chars_pruned_length;
-		    std::vector<pc_node_ex> temp_nodes;
-		    size_type tree_size = this->construct_tree_shape(C, chars_coding, chars_pruned_length, temp_nodes);
+		    std::map<uint64_t, uint64_t> leaves_to_size_of_subtree;
+		    std::vector<sk_node> temp_nodes;
+		    size_type tree_size = this->construct_tree_shape(C, chars_coding, chars_pruned_length, temp_nodes, leaves_to_size_of_subtree);
 		    // 4. Generate wavelet tree bit sequence m_bv
 		    std::vector<uint64_t> bv_node_pos(this->m_tree.size(), 0);
 
@@ -492,19 +525,19 @@ if(bv.size() > 0)
 		    size_type leaves_bv_size = 0;
 		    for(size_type node_in_temp = 0; node_in_temp < temp_nodes.size(); node_in_temp++)
 		    {
-		    	if(temp_nodes[node_in_temp].minimal_depth == temp_nodes[node_in_temp].maximal_depth && temp_nodes[node_in_temp].minimal_depth > 0)
+		    	if((temp_nodes[node_in_temp].maximal_depth - temp_nodes[node_in_temp].minimal_depth)<=1
+		    			&& temp_nodes[node_in_temp].maximal_depth > 0)
 				{
 
 		    		{
 		    			uint64_t v =temp_to_tree[node_in_temp];
-		    			uint64_t h = this->m_tree.child(v, 1);
 		    			this->m_tree.set_bv_pos_rank(v, pruned_chars_index);
-						pruned_chars_index += pow(2., (double)h);
+						pruned_chars_index += leaves_to_size_of_subtree[node_in_temp];
 
 					}
 
 					//this node is a root of a full subtree
-		    		size_type current_extra = (temp_nodes[node_in_temp].minimal_depth) * temp_nodes[node_in_temp].freq;
+		    		size_type current_extra = (temp_nodes[node_in_temp].maximal_depth) * temp_nodes[node_in_temp].freq;
 					 //uint64_t current_saving = temp_nodes[node_in_temp].freq;//not needed because was not generated to leaves
 					 //tree_size -= current_saving; //not needed because was not generated to leaves
 					 leaves_bv_size += current_extra;
@@ -615,7 +648,7 @@ if(bv.size() > 0)
 		    //m_chars_coding = chars_coding;
 
 		}
-		wt_new_sk(){}
+		wt_red_sk(){}
 
 
 		// insert a character into the wavelet tree
@@ -746,14 +779,7 @@ if(bv.size() > 0)
 		;
 	};
 }
-#endif /* NEW_SKELETONWAVELETTREE_H_ */
-
-
-
-
-
-
-
+#endif /* NEW_REDUCED_SKELETON_H_ */
 
 
 

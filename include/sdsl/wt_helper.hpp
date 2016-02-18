@@ -263,29 +263,37 @@ struct _byte_tree {
 
     //! Serializes the data structure into the given ostream
     uint64_t serialize(std::ostream& out, structure_tree_node* v=nullptr,
-                       std::string name="") const {
+                       std::string name="", bool writeCtoLeaves = true) const {
         structure_tree_node* child = structure_tree::add_child(
                                          v, name, util::class_name(*this));
         uint64_t written_bytes = 0;
         uint64_t m_nodes_size = m_nodes.size();
         write_member(m_nodes_size, out, child, "m_nodes.size()");
         serialize_vector(m_nodes, out, child, "m_nodes");
-        out.write((char*) m_c_to_leaf, fixed_sigma*sizeof(m_c_to_leaf[0]));
-        written_bytes += fixed_sigma*sizeof(m_c_to_leaf[0]);// bytes from previous loop
+        if(writeCtoLeaves)
+        {
+        	out.write((char*) m_c_to_leaf, fixed_sigma*sizeof(m_c_to_leaf[0]));
+        	written_bytes += fixed_sigma*sizeof(m_c_to_leaf[0]);// bytes from previous loop
         out.write((char*) m_path, fixed_sigma*sizeof(m_path[0]));
         written_bytes += fixed_sigma*sizeof(m_path[0]);// bytes from previous loop
+        }
+
         structure_tree::add_size(child, written_bytes);
         return written_bytes;
     }
 
     //! Loads the data structure from the given istream.
-    void load(std::istream& in) {
+    void load(std::istream& in, bool loadCtoLeaves = true) {
         uint64_t m_nodes_size = 0;
         read_member(m_nodes_size, in);
         m_nodes = std::vector<data_node>(m_nodes_size);
         load_vector(m_nodes, in);
-        in.read((char*) m_c_to_leaf, fixed_sigma*sizeof(m_c_to_leaf[0]));
-        in.read((char*) m_path, fixed_sigma*sizeof(m_path[0]));
+        if(loadCtoLeaves)
+        {
+        	in.read((char*) m_c_to_leaf, fixed_sigma*sizeof(m_c_to_leaf[0]));
+in.read((char*) m_path, fixed_sigma*sizeof(m_path[0]));
+        }
+        
     }
 
     //! Get corresponding leaf for symbol c.
@@ -342,6 +350,11 @@ struct _byte_tree {
         return m_nodes[v].bv_pos_rank;
     }
 
+    //! Return the start of the node in the WT's bit vector
+	inline void set_bv_pos_rank(node_type v, uint64_t pos) {
+		m_nodes[v].bv_pos_rank = pos;
+	}
+
     //! Return if the node is a valid node
     inline bool is_valid(node_type v)const {
         return v != undef;
@@ -380,10 +393,10 @@ struct byte_tree {
 };
 
 // Strategy class for tree representation of a WT
-template<bool t_dfs_shape, class t_wt>
+template<class vtype, bool t_dfs_shape, class t_wt>
 struct _int_tree {
     using alphabet_category = int_alphabet_tag;
-    using value_type = uint64_t;
+    using value_type = vtype;
     using node_type = uint64_t; // node is represented by index in m_nodes
     using data_node = _node<_int_tree>;
     enum :uint64_t {undef = 0xFFFFFFFFFFFFFFFFULL}; // max uint64_t value
@@ -514,37 +527,47 @@ struct _int_tree {
 
     //! Serializes the data structure into the given ostream
     uint64_t serialize(std::ostream& out, structure_tree_node* v=nullptr,
-                       std::string name="") const {
+                       std::string name="", bool writeCtoLeaves = true) const {
         structure_tree_node* child = structure_tree::add_child(
                                          v, name, util::class_name(*this));
         uint64_t written_bytes = 0;
         uint64_t m_nodes_size = m_nodes.size();
         written_bytes += write_member(m_nodes_size, out, child, "m_nodes.size()");
         written_bytes += serialize_vector(m_nodes, out, child, "m_nodes");
-        uint64_t m_c_to_leaf_size = m_c_to_leaf.size();
-        written_bytes += write_member(m_c_to_leaf_size, out, child, "m_c_to_leaf.size()");
-        written_bytes += serialize_vector(m_c_to_leaf, out, child, "m_c_to_leaf");
+        if(writeCtoLeaves)
+        {
+        	uint64_t m_c_to_leaf_size = m_c_to_leaf.size();
+        	written_bytes += write_member(m_c_to_leaf_size, out, child, "m_c_to_leaf.size()");
+        	written_bytes += serialize_vector(m_c_to_leaf, out, child, "m_c_to_leaf");
         uint64_t m_path_size = m_path.size();
         written_bytes += write_member(m_path_size, out, child, "m_path.size()");
-        written_bytes += serialize_vector(m_path, out, child, "m_path");
+written_bytes += serialize_vector(m_path, out, child, "m_path");
+        }
+
+        
         structure_tree::add_size(child, written_bytes);
         return written_bytes;
     }
 
     //! Loads the data structure from the given istream.
-    void load(std::istream& in) {
+    void load(std::istream& in, bool loadMcToLeaf = true) {
         uint64_t m_nodes_size = 0;
         read_member(m_nodes_size, in);
         m_nodes = std::vector<data_node>(m_nodes_size);
         load_vector(m_nodes, in);
-        uint64_t m_c_to_leaf_size = 0;
-        read_member(m_c_to_leaf_size, in);
-        m_c_to_leaf = std::vector<node_type>(m_c_to_leaf_size);
-        load_vector(m_c_to_leaf, in);
+        if(loadMcToLeaf)
+        {
+        	uint64_t m_c_to_leaf_size = 0;
+        	read_member(m_c_to_leaf_size, in);
+        	m_c_to_leaf = std::vector<node_type>(m_c_to_leaf_size);
+        	load_vector(m_c_to_leaf, in);
         uint64_t m_path_size = 0;
         read_member(m_path_size, in);
         m_path = std::vector<uint64_t>(m_path_size);
-        load_vector(m_path, in);
+ load_vector(m_path, in);
+        }
+
+       
     }
 
     //! Get corresponding leaf for symbol c.
@@ -611,6 +634,11 @@ if(c >= m_path.size() )
         return m_nodes[v].bv_pos_rank;
     }
 
+    //! Return the start of the node in the WT's bit vector
+	inline void set_bv_pos_rank(node_type v, uint64_t pos) {
+		m_nodes[v].bv_pos_rank = pos;
+	}
+
     //! Return if the node is a valid node
     inline bool is_valid(node_type v)const {
         return v != undef;
@@ -650,12 +678,14 @@ if(c >= m_path.size() )
 };
 
 // Strategy class for tree representation of a WT
-template<bool t_dfs_shape=false>
+template<bool t_dfs_shape=false, class vtype = uint32_t>
 struct int_tree {
     template<class t_wt>
-    using type = _int_tree<t_dfs_shape, t_wt>;
+    using type = _int_tree<vtype, t_dfs_shape, t_wt>;
 };
 
 } // end namespace sdsl
 #endif
+
+
 
